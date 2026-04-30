@@ -6,8 +6,8 @@
     <title>MATERIAL ANALYZER</title>
     <style>
         :root {
-            --bg-glass: rgba(0, 0, 0, 0.8);
-            --border-glass: rgba(255, 255, 255, 0.2);
+            --bg-glass: rgba(0, 0, 0, 0.85);
+            --border-glass: rgba(255, 255, 255, 0.25);
             --safe-bottom: env(safe-area-inset-bottom);
         }
 
@@ -15,12 +15,11 @@
             margin: 0;
             background-color: #000;
             color: #fff;
-            font-family: -apple-system, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             height: 100dvh;
             overflow: hidden;
         }
 
-        /* 1. プレビューエリア：画像を動かせるように変更 */
         #viewer-container {
             position: absolute;
             top: 0;
@@ -31,8 +30,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* はみ出た画像を見せない */
-            touch-action: none; /* ブラウザのデフォルトスクロールを無効化 */
+            overflow: hidden;
+            touch-action: none;
         }
 
         #video, #uploaded-image {
@@ -40,10 +39,8 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-            transition: transform 0.05s linear; /* 滑らかな動き */
         }
 
-        /* 2. 中央の固定照準（ここが計測点になる） */
         #aimer {
             position: absolute;
             top: 50%;
@@ -51,13 +48,14 @@
             transform: translate(-50%, -50%);
             width: 40px;
             height: 40px;
-            border: 1px solid #fff;
+            border: 1.5px solid #fff;
             border-radius: 50%;
             z-index: 10;
-            pointer-events: none; /* 操作の邪魔をしない */
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
-        #aimer::before { content: ''; position: absolute; top: 50%; left: -15px; width: 70px; height: 1px; background: #fff; }
-        #aimer::after { content: ''; position: absolute; left: 50%; top: -15px; width: 1px; height: 70px; background: #fff; }
+        #aimer::before { content: ''; position: absolute; top: 50%; left: -20px; width: 80px; height: 1.5px; background: #fff; }
+        #aimer::after { content: ''; position: absolute; left: 50%; top: -20px; width: 1.5px; height: 80px; background: #fff; }
 
         /* GUIパネル */
         .gui-panel {
@@ -65,27 +63,81 @@
             bottom: calc(20px + var(--safe-bottom));
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
+            width: 94%;
             background: var(--bg-glass);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: var(--border-glass);
-            border-radius: 20px;
-            padding: 18px;
+            border-radius: 24px;
+            padding: 24px;
             box-sizing: border-box;
             z-index: 100;
         }
 
-        .status { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
-        #color-preview { width: 60px; height: 60px; border-radius: 12px; border: 1px solid #fff; }
-        #hex-value { font-size: 24px; font-weight: 200; margin: 0; }
-
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn {
-            height: 48px; background: rgba(255,255,255,0.1); border: 1px solid var(--border-glass);
-            border-radius: 10px; color: #fff; display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 600; cursor: pointer;
+        /* 数値表示エリア */
+        .status {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
         }
+
+        .rgb-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* RGB数値を強調 */
+        .rgb-values {
+            font-size: 42px; /* 最大級のサイズ */
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        #color-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .sub-info {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 10px;
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn {
+            height: 56px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:active { background: rgba(255,255,255,0.25); }
         input[type="file"] { display: none; }
     </style>
 </head>
@@ -100,10 +152,13 @@
 
 <div class="gui-panel">
     <div class="status">
-        <div id="color-preview"></div>
-        <div>
-            <h2 id="hex-value">#------</h2>
-            <div id="rgb-label" style="font-size:11px; color:gray;">R:-- G:-- B:--</div>
+        <div class="rgb-main">
+            <div id="rgb-display" class="rgb-values">--- --- ---</div>
+            <div id="color-preview"></div>
+        </div>
+        <div class="sub-info">
+            <span id="hex-label">HEX: #------</span>
+            <span>CENTER POINT</span>
         </div>
     </div>
     <div class="controls">
@@ -120,16 +175,17 @@
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
     const colorPreview = document.getElementById('color-preview');
-    const hexText = document.getElementById('hex-value');
-    const rgbText = document.getElementById('rgb-label');
+    const rgbDisplay = document.getElementById('rgb-display');
+    const hexLabel = document.getElementById('hex-label');
 
     let posX = 0, posY = 0, scale = 1;
     let isHolding = false;
 
-    // --- カメラ・ファイル処理 ---
+    // カメラ設定
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(s => video.srcObject = s);
 
+    // 画像読み込み
     document.getElementById('file-input').addEventListener('change', e => {
         const file = e.target.files[0];
         if (file) {
@@ -138,14 +194,14 @@
                 image.src = f.target.result;
                 image.style.display = 'block';
                 video.style.display = 'none';
-                posX = 0; posY = 0; scale = 1; // リセット
+                posX = 0; posY = 0; scale = 1;
                 updateTransform();
             };
             reader.readAsDataURL(file);
         }
     });
 
-    // --- ドラッグ操作 (画像を動かす) ---
+    // 操作
     let startX, startY;
     container.addEventListener('pointerdown', e => {
         startX = e.clientX - posX;
@@ -165,25 +221,20 @@
         target.style.transform = `translate(${posX}px, ${posY}px) scale(${scale})`;
     }
 
-    // --- 色解析コア ---
+    // 解析
     function analyze() {
         if (isHolding) return;
         const source = (image.style.display === 'block') ? image : video;
         if (source.tagName === 'VIDEO' && video.readyState < 2) return;
         if (source.tagName === 'IMG' && !image.complete) return;
 
-        // 表示されている通りの見た目をキャンバスに再現して、中心の色を抜く
-        canvas.width = window.innerWidth / 4; // 軽量化のため1/4サイズ
+        canvas.width = window.innerWidth / 4;
         canvas.height = window.innerHeight / 4;
-        
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
 
         ctx.save();
         ctx.translate(centerX + posX/4, centerY + posY/4);
-        ctx.scale(scale, scale);
-        
-        // 画像/ビデオのサイズに合わせて描画
         const aspect = source.videoWidth ? (source.videoWidth / source.videoHeight) : (source.naturalWidth / source.naturalHeight);
         let dw, dh;
         if (aspect > canvas.width/canvas.height) {
@@ -195,18 +246,20 @@
         ctx.restore();
 
         const p = ctx.getImageData(centerX, centerY, 1, 1).data;
-        const hex = "#" + ((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2]).toString(16).slice(1).toUpperCase();
+        const r = p[0], g = p[1], b = p[2];
+        const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
 
         colorPreview.style.backgroundColor = hex;
-        hexText.innerText = hex;
-        rgbText.innerText = `R:${p[0]} G:${p[1]} B:${p[2]}`;
+        rgbDisplay.innerText = `${r} ${g} ${b}`;
+        hexLabel.innerText = `HEX: ${hex}`;
     }
 
     setInterval(analyze, 100);
 
-    document.getElementById('hold-btn').addEventListener('click', () => {
+    document.getElementById('hold-btn').addEventListener('click', function() {
         isHolding = !isHolding;
-        document.getElementById('hold-btn').style.background = isHolding ? "rgba(255,0,0,0.3)" : "rgba(255,255,255,0.1)";
+        this.style.background = isHolding ? "rgba(255, 50, 50, 0.4)" : "rgba(255, 255, 255, 0.1)";
+        this.innerText = isHolding ? "RELEASE" : "HOLD";
     });
 </script>
 </body>
