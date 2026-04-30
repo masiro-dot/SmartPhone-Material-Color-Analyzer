@@ -3,209 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SMARTPHONE COLOR ANALYZER</title>
+    <title>MATERIAL COLOR ANALYZER</title>
     <style>
-        /* 既存ツールと共通のダークモード・ベーススタイル */
         :root {
-            --bg-glass: rgba(0, 0, 0, 0.7);
+            --bg-glass: rgba(0, 0, 0, 0.75);
             --border-glass: rgba(255, 255, 255, 0.2);
             --text: #ffffff;
-            --safe-area-bottom: env(safe-area-inset-bottom);
+            --safe-bottom: env(safe-area-inset-bottom);
         }
 
         body {
             margin: 0;
-            padding: 0;
             background-color: #000;
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden; /* スマホでの不要なスクロール防止 */
-            height: 100dvh; /* iOSのツールバーを除いた高さ */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            height: 100dvh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
         }
 
-        /* 1. カメラビュー（メイン） */
-        #camera-wrapper {
+        /* 1. メイン表示エリア (カメラまたは画像) */
+        #viewer-container {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             z-index: 1;
-            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111;
         }
 
-        #video {
+        #video, #uploaded-image {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* カメラ映像を全画面にフィット */
+            object-fit: contain; /* 画像全体が見えるように */
         }
 
-        /* 2. 照準（クロスヘア）：画面中央に配置 */
+        /* 2. 照準（クロスヘア） */
         #aimer {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 30px;
-            height: 30px;
-            border: 2px solid #fff;
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(255,255,255,0.5);
             border-radius: 50%;
-            box-shadow: 0 0 8px rgba(0,0,0,0.5);
-            pointer-events: none; /* タッチイベントを透過 */
+            pointer-events: none;
             z-index: 10;
         }
-        #aimer::before, #aimer::after {
-            content: '';
-            position: absolute;
-            background-color: #fff;
-        }
-        /* 十字線 */
-        #aimer::before { top: 14px; left: -5px; width: 40px; height: 2px; }
-        #aimer::after { top: -5px; left: 14px; width: 2px; height: 40px; }
+        #aimer::before { content: ''; position: absolute; top: 50%; left: -10px; width: 60px; height: 1px; background: rgba(255,255,255,0.5); }
+        #aimer::after { content: ''; position: absolute; left: 50%; top: -10px; width: 1px; height: 60px; background: rgba(255,255,255,0.5); }
 
-        /* 3. ヘッダー： Virtual Gallery等と同様のミニマル配置 */
+        /* 3. ヘッダー (既存ツール踏襲) */
         header {
             position: absolute;
             top: 0;
-            left: 0;
             width: 100%;
-            padding: 15px 20px;
-            padding-top: calc(15px + env(safe-area-inset-top)); /* iPhoneのノッチ回避 */
-            box-sizing: border-box;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+            padding: calc(20px + env(safe-area-inset-top)) 20px 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
             z-index: 100;
-            pointer-events: none;
         }
+        h1 { font-size: 14px; font-weight: 300; margin: 0; letter-spacing: 0.2em; opacity: 0.8; }
 
-        h1 {
-            font-size: 14px;
-            font-weight: 300;
-            margin: 0;
-            letter-spacing: 0.15em;
-            color: rgba(255,255,255,0.8);
-        }
-
-        /* 4. フローティングGUIパネル：既存ツール群とデザインを統一 */
+        /* 4. フローティングGUIパネル */
         .gui-panel {
             position: absolute;
-            bottom: calc(20px + var(--safe-area-bottom)); /* iPhoneの下部バー回避 */
+            bottom: calc(20px + var(--safe-bottom));
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
-            max-width: 380px;
+            max-width: 400px;
             background: var(--bg-glass);
-            backdrop-filter: blur(12px); /* 背景ぼかし */
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             border: var(--border-glass);
-            border-radius: 18px;
-            padding: 18px;
+            border-radius: 20px;
+            padding: 20px;
             box-sizing: border-box;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             z-index: 100;
         }
 
-        /* カラープレビューエリア */
-        .color-status {
+        /* カラー情報表示部 */
+        .status-row {
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
-
         #color-preview {
-            width: 60px;
-            height: 60px;
+            width: 64px;
+            height: 64px;
             border-radius: 12px;
             border: 2px solid #fff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            background-color: #ccc; /* 初期色 */
+            background: #333;
         }
+        .info-text h2 { font-size: 28px; font-weight: 200; margin: 0; }
+        .info-text p { font-size: 12px; color: rgba(255,255,255,0.5); margin: 0; }
 
-        .color-hex-info {
-            flex: 1;
+        /* ボタン群 (Load Texture機能を追加) */
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
-
-        #hex-value {
-            font-size: 24px;
-            font-weight: 200;
-            letter-spacing: 0.05em;
-            margin: 0;
-        }
-
-        #color-name {
-            font-size: 12px;
-            color: rgba(255,255,255,0.6);
-            margin: 2px 0 0 0;
-        }
-
-        /* 分析・ホールドボタン */
-        #hold-btn {
-            width: 100%;
-            height: 50px; /* 片手で押しやすい高さ */
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        
+        /* ファイル選択ボタンをスタイリッシュに */
+        .custom-file-upload {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 50px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--border-glass);
             border-radius: 10px;
-            color: #ffffff;
-            font-size: 15px;
-            font-weight: 500;
-            letter-spacing: 0.1em;
+            font-size: 13px;
             cursor: pointer;
-            transition: background 0.2s;
+        }
+
+        button {
+            height: 50px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid var(--border-glass);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 500;
             -webkit-appearance: none;
         }
 
-        #hold-btn:active {
-            background: rgba(255, 255, 255, 0.25);
-        }
-        
-        #hold-btn.holding {
-            background-color: rgba(255, 50, 50, 0.2);
-            border-color: rgba(255, 50, 50, 0.5);
+        button:active, .custom-file-upload:active {
+            background: rgba(255,255,255,0.3);
         }
 
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>MATERIAL COLOR ANALYZER</h1>
+    <h1>MATERIAL ANALYZER</h1>
 </header>
 
-<!-- カメラ映像エリア -->
-<div id="camera-wrapper">
+<div id="viewer-container">
+    <!-- カメラ映像 -->
     <video id="video" autoplay playsinline muted></video>
-    <!-- 照準 -->
+    <!-- 取り込んだ画像（初期は非表示） -->
+    <img id="uploaded-image" style="display:none;">
     <div id="aimer"></div>
 </div>
 
-<!-- フローティングGUIパネル -->
 <div class="gui-panel">
-    <div class="color-status">
-        <!-- 元のID: result1 (プレビュー) -->
+    <div class="status-row">
         <div id="color-preview"></div>
-        <div class="color-hex-info">
-            <!-- 元のID: result2 (HEX値) -->
-            <p id="hex-value">#------</p>
-            <p id="color-name">DETECTING...</p>
+        <div class="info-text">
+            <h2 id="hex-value">#------</h2>
+            <p id="color-name">READY</p>
         </div>
     </div>
-    
-    <!-- ホールドボタン (JSでID: holdButton と関連付ける) -->
-    <button id="hold-btn">HOLD COLOR</button>
+
+    <div class="button-grid">
+        <!-- Load Texture機能 -->
+        <label class="custom-file-upload">
+            <input type="file" id="load-texture" accept="image/*">
+            LOAD TEXTURE
+        </label>
+        
+        <button id="hold-btn">HOLD COLOR</button>
+    </div>
 </div>
 
-<!-- 元のapp.jsをそのまま読み込み -->
-<script src="app.js"></script>
-
-<!-- ID名が異なる場合のブリッジ用スクリプト (もしapp.jsが動作しない場合のみコメントアウトを外す) -->
-<!-- 
 <script>
-    // 元のJSが 'result1' や 'result2' というIDを探している場合の対策
-    document.getElementById('result1').id = 'color-preview';
-    document.getElementById('result2').id = 'hex-value';
+    // iPhoneでのカメラ起動処理
+    const video = document.getElementById('video');
+    const image = document.getElementById('uploaded-image');
+    const fileInput = document.getElementById('load-texture');
+
+    // カメラ起動
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' },
+                audio: false
+            });
+            video.srcObject = stream;
+        } catch (err) {
+            console.error("Camera error:", err);
+        }
+    }
+
+    // 画像読み込み (Load Texture)
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                image.src = event.target.result;
+                image.style.display = 'block';
+                video.style.display = 'none'; // カメラを隠して画像を表示
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    startCamera();
 </script>
--->
+<script src="app.js"></script>
 </body>
 </html>
