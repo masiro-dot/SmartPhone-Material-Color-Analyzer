@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MATERIAL COLOR ANALYZER</title>
+    <title>MATERIAL ANALYZER</title>
     <style>
         :root {
             --bg-glass: rgba(0, 0, 0, 0.75);
             --border-glass: rgba(255, 255, 255, 0.2);
-            --text: #ffffff;
+            --safe-top: env(safe-area-inset-top);
             --safe-bottom: env(safe-area-inset-bottom);
         }
 
         body {
             margin: 0;
             background-color: #000;
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
             height: 100dvh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
 
-        /* 1. メイン表示エリア (カメラまたは画像) */
+        /* プレビューエリア */
         #viewer-container {
             position: absolute;
             top: 0;
@@ -40,10 +40,10 @@
         #video, #uploaded-image {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* 画像全体が見えるように */
+            object-fit: contain;
         }
 
-        /* 2. 照準（クロスヘア） */
+        /* 照準 */
         #aimer {
             position: absolute;
             top: 50%;
@@ -51,32 +51,32 @@
             transform: translate(-50%, -50%);
             width: 40px;
             height: 40px;
-            border: 1px solid rgba(255,255,255,0.5);
+            border: 1px solid rgba(255,255,255,0.6);
             border-radius: 50%;
             pointer-events: none;
             z-index: 10;
         }
-        #aimer::before { content: ''; position: absolute; top: 50%; left: -10px; width: 60px; height: 1px; background: rgba(255,255,255,0.5); }
-        #aimer::after { content: ''; position: absolute; left: 50%; top: -10px; width: 1px; height: 60px; background: rgba(255,255,255,0.5); }
+        #aimer::before { content: ''; position: absolute; top: 50%; left: -15px; width: 70px; height: 1px; background: rgba(255,255,255,0.4); }
+        #aimer::after { content: ''; position: absolute; left: 50%; top: -15px; width: 1px; height: 70px; background: rgba(255,255,255,0.4); }
 
-        /* 3. ヘッダー (既存ツール踏襲) */
+        /* ヘッダー */
         header {
             position: absolute;
             top: 0;
             width: 100%;
-            padding: calc(20px + env(safe-area-inset-top)) 20px 20px;
+            padding: calc(20px + var(--safe-top)) 20px;
             background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
             z-index: 100;
         }
-        h1 { font-size: 14px; font-weight: 300; margin: 0; letter-spacing: 0.2em; opacity: 0.8; }
+        h1 { font-size: 14px; font-weight: 300; margin: 0; letter-spacing: 0.15em; opacity: 0.8; }
 
-        /* 4. フローティングGUIパネル */
+        /* GUIパネル */
         .gui-panel {
             position: absolute;
-            bottom: calc(20px + var(--safe-bottom));
+            bottom: calc(25px + var(--safe-bottom));
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
+            width: 92%;
             max-width: 400px;
             background: var(--bg-glass);
             backdrop-filter: blur(15px);
@@ -88,129 +88,95 @@
             z-index: 100;
         }
 
-        /* カラー情報表示部 */
-        .status-row {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        #color-preview {
-            width: 64px;
-            height: 64px;
-            border-radius: 12px;
-            border: 2px solid #fff;
-            background: #333;
-        }
-        .info-text h2 { font-size: 28px; font-weight: 200; margin: 0; }
+        .status-area { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        #color-preview { width: 65px; height: 65px; border-radius: 12px; border: 1px solid #fff; background: #222; }
+        .info-text h2 { font-size: 26px; font-weight: 200; margin: 0; }
         .info-text p { font-size: 12px; color: rgba(255,255,255,0.5); margin: 0; }
 
-        /* ボタン群 (Load Texture機能を追加) */
-        .button-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        
-        /* ファイル選択ボタンをスタイリッシュに */
-        .custom-file-upload {
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn {
+            height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 50px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid var(--border-glass);
-            border-radius: 10px;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        button {
-            height: 50px;
-            background: rgba(255,255,255,0.15);
+            background: rgba(255, 255, 255, 0.1);
             border: 1px solid var(--border-glass);
             border-radius: 10px;
             color: #fff;
             font-size: 13px;
-            font-weight: 500;
-            -webkit-appearance: none;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
-
-        button:active, .custom-file-upload:active {
-            background: rgba(255,255,255,0.3);
-        }
-
+        .btn:active { background: rgba(255, 255, 255, 0.25); }
         input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>MATERIAL ANALYZER</h1>
-</header>
+<header><h1>MATERIAL ANALYZER</h1></header>
 
 <div id="viewer-container">
-    <!-- カメラ映像 -->
     <video id="video" autoplay playsinline muted></video>
-    <!-- 取り込んだ画像（初期は非表示） -->
     <img id="uploaded-image" style="display:none;">
     <div id="aimer"></div>
 </div>
 
 <div class="gui-panel">
-    <div class="status-row">
+    <div class="status-area">
         <div id="color-preview"></div>
         <div class="info-text">
             <h2 id="hex-value">#------</h2>
             <p id="color-name">READY</p>
         </div>
     </div>
-
-    <div class="button-grid">
-        <!-- Load Texture機能 -->
-        <label class="custom-file-upload">
-            <input type="file" id="load-texture" accept="image/*">
-            LOAD TEXTURE
+    <div class="controls">
+        <label class="btn">
+            LOAD IMAGE
+            <input type="file" id="file-input" accept="image/*">
         </label>
-        
-        <button id="hold-btn">HOLD COLOR</button>
+        <button id="hold-btn" class="btn" style="width:100%">HOLD COLOR</button>
     </div>
 </div>
 
 <script>
-    // iPhoneでのカメラ起動処理
     const video = document.getElementById('video');
     const image = document.getElementById('uploaded-image');
-    const fileInput = document.getElementById('load-texture');
+    const fileInput = document.getElementById('file-input');
 
-    // カメラ起動
-    async function startCamera() {
+    // 1. カメラ初期化
+    async function initCamera() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment' },
                 audio: false
             });
             video.srcObject = stream;
+            video.setAttribute("playsinline", true); // iPhone用
+            await video.play();
         } catch (err) {
-            console.error("Camera error:", err);
+            console.error("Camera access denied or not available", err);
         }
     }
 
-    // 画像読み込み (Load Texture)
+    // 2. 画像読み込み (Load Texture)
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (event) => {
-                image.src = event.target.result;
+            reader.onload = (f) => {
+                image.src = f.target.result;
                 image.style.display = 'block';
-                video.style.display = 'none'; // カメラを隠して画像を表示
+                video.style.display = 'none';
+                if(video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                }
             };
             reader.readAsDataURL(file);
         }
     });
 
-    startCamera();
+    // 起動時にカメラ開始
+    window.addEventListener('load', initCamera);
 </script>
 <script src="app.js"></script>
 </body>
